@@ -1,0 +1,15 @@
+[package]
+name = "TypingPractice"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# tui框架
+tui = "0.19"
+crossterm = "0.25"
+# tui文本编辑器
+tui-textarea = "0.1.6"
+# reqwest
+reqwest = { version = "0.11", features = ["blocking"] }
