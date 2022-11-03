@@ -13,3 +13,5 @@ crossterm = "0.25"
 tui-textarea = "0.1.6"
 # reqwest
 reqwest = { version = "0.11", features = ["blocking"] }
+# 音频库
+rodio = "0.16.0"

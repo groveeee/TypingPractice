@@ -3,9 +3,12 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use std::{io, time::Duration};
-use std::io::Read;
+use std::{io, thread, time::Duration};
+use std::fs::File;
+use std::io::{BufReader, Read};
+use std::thread::Thread;
 use std::time::{SystemTime, UNIX_EPOCH};
+use rodio::Source;
 
 use tui::{
     backend::{Backend, CrosstermBackend},
@@ -94,6 +97,11 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
         mistake_count: 0,
         precise_count: 0,
     };
+    // 准备音频资源
+    let (stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
+    // 使用Cargo.toml文件所在的相对路径加载音频文件
+
+
 
     loop {
         // 处理按键事件
@@ -112,9 +120,19 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
                         if string_exist.eq(user_input.as_str()) {
                             b = true;
                             cool.precise_count = cool.precise_count + 1;
+                            // 播放正确的音效
+                            let file = File::open("char.mp3").unwrap();
+                            let reader = BufReader::new(file);
+                            let source = rodio::Decoder::new(reader).unwrap();
+                            stream_handle.play_raw(source.convert_samples()).expect("播放输入正确音效失败");
                         } else {
                             b = false;
                             cool.mistake_count = cool.mistake_count + 1;
+                            // 播放失败的音效
+                            let file = File::open("fail.wav").unwrap();
+                            let reader = BufReader::new(file);
+                            let source = rodio::Decoder::new(reader).unwrap();
+                            stream_handle.play_raw(source.convert_samples()).expect("播放输入错误音效失败");
                         }
                         cool.word_count = cool.word_count + 1;
                     }
@@ -128,6 +146,11 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
                         textarea.delete_line_by_head();
                         // 清除已经输入过的内容
                         user_input = String::new();
+                        // 播放回车键的音效
+                        let file = File::open("enter.wav").unwrap();
+                        let reader = BufReader::new(file);
+                        let source = rodio::Decoder::new(reader).unwrap();
+                        stream_handle.play_raw(source.convert_samples()).expect("回车键音效播放失败");
                     }
                     /*
                     原有的按键逻辑非正常 自定义一映射
@@ -140,6 +163,11 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
                             let result = &user_input[0..user_input.len() - 1];
                             user_input = result.parse().unwrap();
                         }
+                        // 播放删除键音效
+                        let file = File::open("backspace.wav").unwrap();
+                        let reader = BufReader::new(file);
+                        let source = rodio::Decoder::new(reader).unwrap();
+                        stream_handle.play_raw(source.convert_samples()).expect("删除键音效播放失败");
                     }
                     // <- 将光标向前移动一个字符
                     KeyCode::Left => {
@@ -183,7 +211,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, string: &mut String, textarea: &mut TextArea
     let mut content = string.clone();
     let paragraph = Paragraph::new(Span::styled(
         content,
-        Style::default().fg(Color::Blue).add_modifier(Modifier::HIDDEN),// 设置字体样式
+        Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),// 设置字体样式
     ))
         // .block(Block::default().borders(Borders::ALL).border_style(Style::fg(Default::default(), Color::LightGreen)).title("TypingPractice OK"))//设置区块标题
         .wrap(Wrap { trim: true })// 文本内容换行展示
@@ -220,7 +248,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, string: &mut String, textarea: &mut TextArea
     let label = format!("{} / {}", cool.word_count,cool.total);
     let gauge = Gauge::default()
         .block(Block::default().title("Complete schedule").borders(Borders::ALL))
-        .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Green))
+        .gauge_style(Style::default().fg(Color::Magenta).bg(Color::LightCyan))
         .percent((f64::from(cool.word_count) / f64::from(cool.total) * 100.0) as u16)// 这个就是进度条的进度百分比 0..100
         .label(label);// 进度条中的内容
     f.render_widget(gauge, chunks[3]);
