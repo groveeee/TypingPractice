@@ -189,6 +189,12 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
                             let result = &user_input[0..user_input.len() - 1];
                             user_input = result.parse().unwrap();
                         }
+                        let string_exist = &string[0..user_input.len()];
+                        if string_exist.eq(user_input.as_str()) {
+                            b = true;
+                        } else {
+                            b = false;
+                        }
                         // 播放删除键音效
                         play_backspace();
                     }
